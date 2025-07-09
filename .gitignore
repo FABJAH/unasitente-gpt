@@ -1,1 +1,10 @@
 .env
+# Entorno virtual
+.venv/
+
+# Archivos de configuración privados
+.env
+
+# Archivos del sistema
+__pycache__/
+*.pyc

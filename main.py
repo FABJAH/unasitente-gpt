@@ -1,32 +1,72 @@
 import os
-from dotenv import load_dotenv
-from openai import AzureOpenAI
+import openai
+import datetime
 
-# 1. Cargar variables del .env
-load_dotenv()
+# Configurar cliente OpenAI con Azure
+openai.api_type = "azure"
+openai.api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
+openai.api_key = os.getenv("AZURE_OPENAI_KEY")
+openai.api_version = os.getenv("AZURE_OPENAI_VERSION")
+deployment_id = os.getenv("AZURE_OPENAI_DEPLOYMENT")
 
-# 2. Debug: imprimimos lo que realmente leyó
-print("🔍 Endpoint    :", os.getenv("AZURE_OPENAI_ENDPOINT"))
-print("🔑 API Key ok  :", os.getenv("AZURE_OPENAI_KEY") is not None)
-print("🚀 Deployment :", os.getenv("AZURE_OPENAI_DEPLOYMENT"))
-print("📦 API Version:", os.getenv("AZURE_OPENAI_VERSION"))
+# 👉 Función externa simulada
+def get_current_time(location: str = "Barcelona") -> str:
+    now = datetime.datetime.now()
+    return f"La hora actual en {location} es {now.strftime('%H:%M')}"
 
-# 3. Crear el cliente AzureOpenAI
-client = AzureOpenAI(
-    api_key=os.getenv("AZURE_OPENAI_KEY"),
-    api_version=os.getenv("AZURE_OPENAI_VERSION"),
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-)
+# 👉 Definición de función para OpenAI
+functions = [
+    {
+        "name": "get_current_time",
+        "description": "Obtiene la hora actual en una ciudad",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "La ciudad para obtener la hora",
+                }
+            },
+            "required": ["location"],
+        },
+    }
+]
 
-# 4. Petición de prueba
-response = client.chat.completions.create(
-    model=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
+# 👉 Primer paso: el modelo decide si invoca la función
+response = openai.ChatCompletion.create(
+    engine=deployment_id,
     messages=[
-        {"role": "system", "content": "Eres un asistente útil y claro."},
-        {"role": "user",   "content": "¿Cuál es la capital de Marruecos?"}
+        {"role": "user", "content": "¿Qué hora es en Barcelona?"}
     ],
-    max_tokens=200
+    functions=functions,
+    function_call="auto",
+    max_tokens=100
 )
 
-# 5. Mostrar la respuesta
-print("📢 Respuesta:", response.choices[0].message.content)
+# 👉 Verificamos si el modelo pidió la función
+choice = response.choices[0]
+if "function_call" in choice.message:
+    function_name = choice.message.function_call.name
+    arguments = eval(choice.message.function_call.arguments)
+    
+    print(f"➡️ El modelo llamó a la función: {function_name} con: {arguments}")
+
+    if function_name == "get_current_time":
+        result = get_current_time(**arguments)
+
+        # 👉 Enviamos resultado de función al modelo
+        final_response = openai.ChatCompletion.create(
+            engine=deployment_id,
+            messages=[
+                {"role": "user", "content": "¿Qué hora es en Barcelona?"},
+                choice.message,
+                {"role": "function", "name": function_name, "content": result}
+            ],
+            max_tokens=100
+        )
+
+        print("🧠 Respuesta del modelo:")
+        print(final_response.choices[0].message.content)
+else:
+    print("🧠 Respuesta sin usar función:")
+    print(choice.message.content)
