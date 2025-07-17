@@ -1,0 +1,14 @@
+PUT https://expatbcn-search.search.windows.net/indexers/articles-indexer?api-version=2020-06-30
+Content-Type: application/json
+api-key: {{YOUR_API_KEY}}
+  "name": "articles-indexer",
+  "description": null,
+  "dataSourceName": "articles-ds",
+  "skillsetName": null,
+  "targetIndexName": "articles-index",
+  "disabled": null,
+  "schedule": null,
+  "fieldMappings": [],
+  "outputFieldMappings": [],
+  "encryptionKey": null
+}

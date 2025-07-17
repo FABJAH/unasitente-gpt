@@ -1,0 +1,10 @@
+{
+  "name": "articles-index",
+  "fields": [
+    { "name":"id",           "type":"Edm.String",        "key":true,  "searchable":false },
+    { "name":"title",        "type":"Edm.String",        "searchable":true, "sortable":true },
+    { "name":"content",      "type":"Edm.String",        "searchable":true },
+    { "name":"validated_at", "type":"Edm.DateTimeOffset", "filterable":true, "sortable":true },
+    { "name":"summary",      "type":"Edm.String",        "searchable":true }
+  ]
+}

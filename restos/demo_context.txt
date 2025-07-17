@@ -1,0 +1,1 @@
+Fabio creó un asistente en Azure OpenAI que usa Function Calling. Además, quiere integrarle RAG para que pueda responder consultas basadas en un contexto externo.
